@@ -1,0 +1,49 @@
+
+{
+  "billing": {
+    "title": "Billing and Refund Policy",
+    "keywords": [
+      "refund",
+      "charged",
+      "charge",
+      "payment",
+      "invoice",
+      "subscription",
+      "billing",
+      "money back"
+    ],
+    "policy": "For billing questions, verify the transaction details and subscription status before advising the customer. Duplicate charges and refund requests must be reviewed by a support agent. Do not promise a refund before eligibility is confirmed."
+  },
+  "account_access": {
+    "title": "Account Access Policy",
+    "keywords": [
+      "login",
+      "log in",
+      "password",
+      "locked account",
+      "can't sign in",
+      "cannot sign in",
+      "account access"
+    ],
+    "policy": "For account access issues, guide the customer to the official password recovery process. Never ask the customer to share their password or authentication codes. Escalate suspected account compromise to a human support agent."
+  },
+  "technical": {
+    "title": "Technical Support Policy",
+    "keywords": [
+      "bug",
+      "error",
+      "crash",
+      "not loading",
+      "broken",
+      "technical",
+      "website down",
+      "slow"
+    ],
+    "policy": "For technical issues, ask for the error message and relevant troubleshooting details. Suggest basic troubleshooting where appropriate. Escalate persistent errors, service outages, and issues that could affect customer data."
+  },
+  "other": {
+    "title": "General Support Policy",
+    "keywords": [],
+    "policy": "For general enquiries, provide clear and helpful information when it is available. If the request cannot be answered confidently, route it to a human support agent."
+  }
+}

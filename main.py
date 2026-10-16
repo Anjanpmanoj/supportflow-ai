@@ -1,12 +1,26 @@
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+import json
+from pathlib import Path
 
 app = FastAPI(
     title="SupportFlow AI",
     description="An intelligent customer support ticket system",
     version="0.2.0",
 )
+POLICY_FILE = Path(__file__).parent / "knowledge_base" / "policies.json"
 
+
+def load_policies():
+    with POLICY_FILE.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+POLICIES = load_policies()
+
+
+def retrieve_policy(category: str) -> dict:
+    return POLICIES.get(category, POLICIES["other"])
 
 class TicketRequest(BaseModel):
     customer_name: str = Field(min_length=1, max_length=100)
@@ -59,12 +73,16 @@ def health():
 
 
 @app.post("/tickets")
+@app.post("/tickets")
 def create_ticket(ticket: TicketRequest):
     category = classify_ticket(ticket.message)
+    policy = retrieve_policy(category)
 
     return {
         "customer_name": ticket.customer_name,
         "message": ticket.message,
         "category": category,
+        "policy_title": policy["title"],
+        "policy": policy["policy"],
         "status": "received",
     }
