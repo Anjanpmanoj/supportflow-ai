@@ -1,5 +1,12 @@
+
+.env
 .venv/
 __pycache__/
+.pytest_cache/
 *.pyc
-.env
-*.db
+
+# Local database
+supportflow.db
+
+# Generated vector database
+chroma_db/

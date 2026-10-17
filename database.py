@@ -13,7 +13,21 @@ def get_connection():
 def initialize_database():
     connection = get_connection()
 
+
     try:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'agent',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS tickets (
@@ -29,8 +43,21 @@ def initialize_database():
                 escalated INTEGER NOT NULL DEFAULT 0,
                 escalation_reason TEXT
             )
+                
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                details TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+            )
+            """
+        )    
 
         # Safely upgrade databases created by earlier versions.
         existing_columns = {
@@ -44,6 +71,10 @@ def initialize_database():
             "priority": "TEXT NOT NULL DEFAULT 'medium'",
             "escalated": "INTEGER NOT NULL DEFAULT 0",
             "escalation_reason": "TEXT",
+            "approved_response": "TEXT",
+            "generation_source": "TEXT NOT NULL DEFAULT 'fallback'",
+            "generation_status": "TEXT NOT NULL DEFAULT 'fallback'",
+            "generation_error": "TEXT",
         }
 
         for column, definition in new_columns.items():

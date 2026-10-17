@@ -8,6 +8,30 @@ import streamlit as st
 # --------------------------------------------------
 
 API_URL = "http://127.0.0.1:8000"
+def update_ticket_action(ticket_id, action, payload=None):
+    """Send a draft review action to the FastAPI backend."""
+    try:
+        response = requests.post(
+            f"{API_URL}/tickets/{ticket_id}/{action}",
+            json=payload,
+            timeout=10,
+        ) if action in ("approve", "reject") else requests.patch(
+            f"{API_URL}/tickets/{ticket_id}/draft",
+            json=payload,
+            timeout=10,
+        )
+
+        response.raise_for_status()
+        return True, response.json().get("message", "Action successful")
+
+    except requests.RequestException as error:
+        detail = "Request failed"
+        if error.response is not None:
+            try:
+                detail = error.response.json().get("detail", str(error))
+            except ValueError:
+                detail = str(error)
+        return False, detail
 
 st.set_page_config(
     page_title="SupportFlow AI",
@@ -41,7 +65,18 @@ def get_tickets():
     except requests.RequestException as error:
         st.error(f"Could not fetch tickets: {error}")
         return []
-
+def get_audit_history(ticket_id):
+    """Fetch audit history for a ticket from the backend."""
+    try:
+        response = requests.get(
+            f"{API_URL}/tickets/{ticket_id}/audit",
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as error:
+        st.error(f"Could not load audit history: {error}")
+        return []
 
 def get_priority(ticket):
     """Read priority, using medium when the API doesn't provide it."""
@@ -240,7 +275,21 @@ if tickets_data:
         priority_options,
     )
 
-    # Apply both filters
+    status_options = [
+        "All",
+        "Awaiting review",
+        "Approved",
+        "Rejected",
+    ]
+
+    selected_status = st.selectbox(
+        "Filter by status",
+        status_options,
+    )
+
+    
+
+    # Apply all filters
     filtered_tickets = tickets_data
 
     if selected_category != "All":
@@ -256,6 +305,22 @@ if tickets_data:
             for ticket in filtered_tickets
             if get_priority(ticket) == selected_priority
         ]
+
+    if selected_status != "All":
+        status_mapping = {
+            "Awaiting review": "received",
+            "Approved": "approved",
+            "Rejected": "rejected",
+        }
+
+        required_status = status_mapping[selected_status]
+
+        filtered_tickets = [
+            ticket
+            for ticket in filtered_tickets
+            if ticket.get("status", "received") == required_status
+        ]
+
 
     # Display the filtered table
     if filtered_tickets:
@@ -351,13 +416,85 @@ if tickets_data:
             )
         )
 
+        
         st.markdown("**Draft response**")
-        st.write(
-            selected_ticket.get(
-                "draft_response",
-                "No draft available.",
+
+        ticket_id = selected_ticket["id"]
+        ticket_status = selected_ticket.get("status", "received")
+
+        if ticket_status == "received":
+            edited_draft = st.text_area(
+                "Review and edit the response",
+                value=selected_ticket.get("draft_response") or "",
+                height=180,
+                key=f"draft_editor_{ticket_id}",
             )
-        )
+
+            col_edit, col_approve, col_reject = st.columns(3)
+
+            with col_edit:
+                if st.button(
+                    "Save edited draft",
+                    key=f"save_draft_{ticket_id}",
+                    use_container_width=True,
+                ):
+                    success, message = update_ticket_action(
+                        ticket_id,
+                        "draft",
+                        {"draft_response": edited_draft},
+                    )
+
+                    if success:
+                        st.success(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
+
+            with col_approve:
+                if st.button(
+                    "Approve response",
+                    key=f"approve_{ticket_id}",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    success, message = update_ticket_action(
+                        ticket_id, "approve"
+                    )
+
+                    if success:
+                        st.success(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
+
+            with col_reject:
+                if st.button(
+                    "Reject draft",
+                    key=f"reject_{ticket_id}",
+                    use_container_width=True,
+                ):
+                    success, message = update_ticket_action(
+                        ticket_id, "reject"
+                    )
+
+                    if success:
+                        st.warning(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
+
+        elif ticket_status == "approved":
+            st.success("This response has been approved.")
+            st.write(
+                selected_ticket.get("approved_response")
+                or selected_ticket.get("draft_response", "")
+            )
+
+        elif ticket_status == "rejected":
+            st.warning("This draft has been rejected.")
+            st.write(
+                selected_ticket.get("draft_response", "")
+            )
 
         if is_escalated(selected_ticket):
             st.warning(
@@ -371,6 +508,18 @@ if tickets_data:
             )
         else:
             st.info("No escalation flagged.")
+        st.subheader("Audit History")
+
+        audit_events = get_audit_history(selected_ticket["id"])
+
+        if audit_events:
+            st.dataframe(
+                pd.DataFrame(audit_events),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.info("No audit events recorded for this ticket yet.")    
 
     else:
         st.info("No tickets match the selected filters.")

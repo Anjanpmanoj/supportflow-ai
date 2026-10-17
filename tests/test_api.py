@@ -11,6 +11,10 @@ def client(tmp_path, monkeypatch):
     # Use a separate temporary database for each test.
     test_db = tmp_path / "test_supportflow.db"
     monkeypatch.setattr(database, "DATABASE_NAME", str(test_db))
+    monkeypatch.setattr(
+        "main.generate_support_response",
+        lambda **kwargs: "Test draft response",
+    )    
 
     with TestClient(app) as test_client:
         yield test_client
