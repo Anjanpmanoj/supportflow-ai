@@ -1,0 +1,8 @@
+# Optional: semantic policy search (set KNOWLEDGE_BASE=vector).
+# Needs roughly 2 GB of RAM and disk, so it is for local use, not a free host.
+-r requirements-backend.txt
+chromadb==1.5.9
+langchain-chroma==1.1.0
+langchain-huggingface==1.2.3
+sentence-transformers==6.1.0
+torch==2.14.1

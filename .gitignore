@@ -1,12 +1,9 @@
-
 .env
-.venv/
+*.db
 __pycache__/
-.pytest_cache/
 *.pyc
-
-# Local database
-supportflow.db
-
-# Generated vector database
+.venv/
+venv/
+.pytest_cache/
+.streamlit/secrets.toml
 chroma_db/

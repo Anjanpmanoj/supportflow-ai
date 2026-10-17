@@ -1,0 +1,46 @@
+# Render Blueprint: creates both services from this one repo.
+# Dashboard -> New -> Blueprint -> pick the repo.
+services:
+  # ---------- Backend (FastAPI) ----------
+  - type: web
+    name: supportflow-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-backend.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: AUTO_ASSIGN
+        value: "true"
+      - key: AUTO_SEND_AI_REPLY
+        value: "true"
+
+  # ---------- Frontend (Streamlit) ----------
+  - type: web
+    name: supportflow-ui
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-frontend.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      # Public URL of the backend, e.g. https://supportflow-api.onrender.com
+      - key: SUPPORTFLOW_API_URL
+        sync: false
